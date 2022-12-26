@@ -3,12 +3,14 @@ package com.nadeem.demo_animation.ui.home
 import android.animation.ObjectAnimator
 import android.animation.ValueAnimator
 import android.content.res.Resources
+import android.util.LayoutDirection
 import android.util.Property
 import android.view.View
 import android.view.ViewGroup
 import android.view.ViewGroup.LayoutParams.MATCH_PARENT
 import android.view.animation.AnimationUtils
 import android.view.animation.DecelerateInterpolator
+import android.widget.HorizontalScrollView
 import androidx.core.view.isVisible
 import androidx.core.view.updateLayoutParams
 import androidx.recyclerview.widget.ListAdapter
@@ -57,7 +59,7 @@ class ListAdapterHome(
                 binding.tv1.text = list[position].str1
                 binding.tv2.text = list[position].str2
 
-//                doAnimation(list[position], binding)
+                doAnimation(list[position], binding)
 
                 binding.card1.setOnClickListener {
                     var isCollapsed = false
@@ -74,23 +76,14 @@ class ListAdapterHome(
                                 true
                             }
                             list[index].isSecondClicked = false
+                            binding.hsv.scrollToStart()
+
                         } else {
                             list[index].isFirstClicked = false
                             list[index].isSecondClicked = false
                         }
                     }
-
-                    if (isExpanded) {
-                        binding.card1.startAnimation(animNormalFromExpand)
-                        binding.card2.startAnimation(animNormalFromCollapse)
-                    } else {
-//                        binding.card1.startAnimation(animExpand)
-//                        binding.card2.startAnimation(animCollapse)
-
-                        animateHeightTo(binding.card1, MATCH_PARENT)
-                        animateHeightTo(binding.card2, 290.toDp)
-                    }
-                    //                    doAnimation(list[position], binding)
+                    doAnimation(list[position], binding)
                     notifyDataSetChanged()
                 }
 
@@ -99,6 +92,7 @@ class ListAdapterHome(
                         if (index == position) {
                             list[index].isFirstClicked = false
                             list[index].isSecondClicked = list[index].isSecondClicked.not()
+                            binding.hsv.scrollToEnd()
                         } else {
                             list[index].isFirstClicked = false
                             list[index].isSecondClicked = false
@@ -115,31 +109,37 @@ class ListAdapterHome(
 
     }
 
+    fun HorizontalScrollView.scrollToEnd() {
+        this.postDelayed({ this.fullScroll(HorizontalScrollView.FOCUS_RIGHT) }, 10)
+    }
+
+    fun HorizontalScrollView.scrollToStart() {
+        this.postDelayed({ this.fullScroll(HorizontalScrollView.FOCUS_LEFT) }, 10)
+    }
+
+
     fun doAnimation(model: Model, binding: ItemCardBinding) {
         if (model.isFirstClicked) {
-//            binding.card2.updateLayoutParams {
-//                width = 290.toDp
-//            }
-//            binding.card1.updateLayoutParams {
-//                width = 0.toDp
-//            }
-
-            binding.card2.animateHeightFromTo(binding.card2.width, 290.toDp)
-            binding.card1.animateHeightFromTo(binding.card1.width, MATCH_PARENT)
+            binding.card1.updateLayoutParams {
+                width = EXPAND_VALUE
+            }
+            binding.card2.updateLayoutParams {
+                width = NORMAL_VALUE
+            }
 
         } else if (model.isSecondClicked) {
             binding.card1.updateLayoutParams {
-                width = 290.toDp
+                width = NORMAL_VALUE
             }
             binding.card2.updateLayoutParams {
-                width = 0.toDp
+                width = EXPAND_VALUE
             }
         } else {
             binding.card2.updateLayoutParams {
-                width = 0.toDp
+                width = NORMAL_VALUE
             }
             binding.card1.updateLayoutParams {
-                width = 0.toDp
+                width = NORMAL_VALUE
             }
         }
 
@@ -149,27 +149,6 @@ class ListAdapterHome(
         (holder as CarTopViewHolder).bind(position)
     }
 
-
-    private fun View.animateHeightFromTo(initialWidth: Int, finalWidth: Int) {
-        val animator = ValueAnimator.ofInt(initialWidth, finalWidth)
-        animator.duration = 250
-        animator.addUpdateListener {
-            val value = it.animatedValue as Int
-            val lp = this.layoutParams
-            lp.width = value
-            this.layoutParams = lp
-            isVisible = value != 0
-        }
-        animator.start()
-
-
-//        val resizeAnimation = ResizeAnimation(
-//            this, finalWidth, initialWidth
-//        )
-//        resizeAnimation.duration = 500
-//        this.startAnimation(resizeAnimation)
-    }
-
     val Float.toPx get() = this * Resources.getSystem().displayMetrics.density
 
     val Float.toDp get() = this / Resources.getSystem().displayMetrics.density
@@ -177,26 +156,9 @@ class ListAdapterHome(
     val Int.toPx get() = (this * Resources.getSystem().displayMetrics.density).toInt()
 
     val Int.toDp get() = (this / Resources.getSystem().displayMetrics.density).toInt()
-    private fun animateHeightTo(view: View, height: Int) {
-        val currentHeight = view.height
-        val animator: ObjectAnimator =
-            ObjectAnimator.ofInt(view, HeightProperty(), currentHeight, height)
-        animator.duration = 300
-        animator.interpolator = DecelerateInterpolator()
-        animator.start()
-    }
 
-    internal class HeightProperty :
-        Property<View, Int>(Int::class.java, "width") {
-        override operator fun get(view: View): Int {
-            return view.width
-        }
-
-        override operator fun set(view: View, value: Int) {
-            view.layoutParams.width = value
-            view.layoutParams = view.layoutParams
-        }
-    }
+    val NORMAL_VALUE = 169.toPx//.toDp
+    val EXPAND_VALUE = 300.toPx//.toDp
 
 }
 
